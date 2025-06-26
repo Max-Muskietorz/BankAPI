@@ -1,144 +1,90 @@
 using Microsoft.AspNetCore.Mvc;
-using BankAPI.Models;
 
-namespace BankAPI.Controllers
+[ApiController]
+
+[Route("api/[controller]")]
+public class AccountsController : ControllerBase
 {
-    [ApiController]
+// Reference to the Bank logic layer for managing account data
+//- Create new account with owner name and optional initial balance
+private readonly Bank _bank;
+public AccountsController(Bank bank)
+{
+// Inject the Bank service into the controller
+_bank = bank;
+}
+//- Get all accounts
 
-    [Route("api/[controller]")]
-
-    public class AccountsController : ControllerBase
-    {
-        private readonly Bank _bank;
-        public AccountsController(Bank bank)
-        {
-            _bank = bank;
-        }
-        
-        // create new account with owner name and optional initial balance
-        [HttpPost]
-        [Route("create")]
-        public IActionResult CreateAccount([FromBody] CreateAccountRequest request)
-        {
-            if (string.IsNullOrEmpty(request.Owner))
-            {
-                return BadRequest("Owner name cannot be empty");
-            }
-
-            var account = new BankAccount(request.Owner, request.InitialBalance);
-            // Save the account to the database or in-memory storage
-            // ...
-
-            return Ok(account);
-        }
-
-        // get all accounts
-        [HttpGet]
-        [Route("all")]
-        public IActionResult GetAllAccounts()
-        {
-            var accounts = _bank.GetAccounts();
-            return Ok(accounts);
-        }
-
-        // get account by id
-        [HttpGet]
-        [Route("{id}")]
-        public IActionResult GetAccountById(int id)
-        {
-            try
-            {
-                var account = _bank.GetAccountById(id);
-                return Ok(account);
-            }
-            catch (Exception ex)
-            {
-                return NotFound(ex.Message);
-            }
-        }
-
-        //get account by owner name
-        [HttpGet]
-        [Route("owner/{owner}")]
-        public IActionResult GetAccountByOwner(string owner)
-        {
-            var accounts = _bank.GetAccounts().Where(a => a.Owner.Equals(owner, StringComparison.OrdinalIgnoreCase)).ToList();
-            if (accounts.Count == 0)
-            {
-                return NotFound("No accounts found for the specified owner");
-            }
-            return Ok(accounts);
-        }
-
-        //update account owner
-        [HttpPut]
-        [Route("{id}/update")]
-        public IActionResult UpdateAccountOwner(int id, [FromBody] string newOwner)
-        {
-            try
-            {
-                _bank.UpdateOwner(id, newOwner);
-                return Ok("Account owner updated successfully");
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
-        }
-
-
-        // deposit money into account
-        [HttpPost]
-        [Route("{id}/deposit")]
-        public IActionResult Deposit(int id, [FromBody] decimal amount)
-        {
-            try
-            {
-                _bank.Deposit(id, amount);
-                return Ok("Deposit successful");
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
-        }
-
-        // withdraw money from account
-        [HttpPost]
-        [Route("{id}/withdraw")]
-        public IActionResult Withdraw(int id, [FromBody] decimal amount)
-        {
-            try
-            {
-                _bank.Withdraw(id, amount);
-                return Ok("Withdrawal successful");
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
-        }
-
-        // delete account
-        [HttpDelete]
-        [Route("{id}")]
-        public IActionResult DeleteAccount(int id)
-        {
-            try
-            {
-                _bank.DeleteAccount(id);
-                return Ok("Account deleted successfully");
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
-        }
-
-
-
-
-
-    }
+[HttpGet]
+public ActionResult<List<BankAccount>> GetAccounts()
+{
+// Return the list of all accounts
+return Ok(_bank.GetAccounts());
 }
 
+//- Get account by ID
+[HttpGet("{id}")]
+public ActionResult<BankAccount> GetAccount(int id)
+{
+// Retrieve the account by ID
+var account = _bank.GetAccount(id);
+// If not found, return NotFound
+if (account == null)
+{
+return NotFound();
+}
+// Return the found account
+return Ok(account);
+}
+//- Create new account
+[HttpPost("create")]
+public ActionResult<BankAccount> CreateAccount([FromBody] BankAccount newAccount)
+{
+// Validate the input
+if (newAccount == null || string.IsNullOrWhiteSpace(newAccount.Owner))
+{
+return BadRequest("Invalid account data.");
+}
+// Create the new account using the Bank service
+var createdAccount = _bank.CreateAccount(newAccount.Owner, newAccount.Balance);
+// Return the created account with a Created response
+return CreatedAtAction(nameof(GetAccount), new { id = createdAccount.Id }, createdAccount);
+}//- Deposit funds into account
+[HttpPost("{id}/deposit")]
+public ActionResult Deposit(int id, [FromBody] decimal amount)
+{
+// Validate the deposit amount
+if (amount <= 0)
+{
+return BadRequest("Deposit amount must be positive.");
+}
+// Perform the deposit using the Bank service
+_bank.Deposit(id, amount);
+// Return NoContent to indicate success
+return NoContent();
+}
+//- Withdraw funds from account
+[HttpPost("{id}/withdraw")]
+public ActionResult Withdraw(int id, [FromBody] decimal amount)
+{
+// Validate the withdrawal amount
+if (amount <= 0)
+{
+return BadRequest("Withdrawal amount must be positive.");
+}
+// Perform the withdrawal using the Bank service
+_bank.Withdraw(id, amount);
+// Return NoContent to indicate success
+return NoContent();
+}
+//- Delete account (soft delete)
+
+[HttpDelete("{id}/delete")]
+public ActionResult DeleteAccount(int id)
+{
+// Attempt to delete the account using the Bank service
+_bank.DeleteAccount(id);
+// Return NoContent to indicate success
+return NoContent();
+}
+}

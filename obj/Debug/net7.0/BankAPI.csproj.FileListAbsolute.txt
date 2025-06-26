@@ -31,3 +31,4 @@ C:\Users\maxmm\Documents\BankAPI\BankAPI\obj\Debug\net7.0\refint\BankAPI.dll
 C:\Users\maxmm\Documents\BankAPI\BankAPI\obj\Debug\net7.0\BankAPI.pdb
 C:\Users\maxmm\Documents\BankAPI\BankAPI\obj\Debug\net7.0\BankAPI.genruntimeconfig.cache
 C:\Users\maxmm\Documents\BankAPI\BankAPI\obj\Debug\net7.0\ref\BankAPI.dll
+C:\Users\maxmm\Documents\BankAPI\BankAPI\bin\Debug\net7.0\bank-frontend\package.json
